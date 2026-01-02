@@ -1,0 +1,6 @@
+﻿logs/
+data_lake/
+plugins/
+__pycache__/
+*.pyc
+.env
