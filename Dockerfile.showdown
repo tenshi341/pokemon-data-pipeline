@@ -1,0 +1,30 @@
+FROM node:18-slim
+
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/pokemon-showdown
+
+RUN git clone https://github.com/smogon/pokemon-showdown.git .
+
+RUN npm install
+RUN node build
+
+RUN echo "exports.port = 8000;" > myconfig.js && \
+    echo "exports.bindaddress = '0.0.0.0';" >> myconfig.js && \
+    echo "exports.proxy = true;" >> myconfig.js && \
+    echo "exports.simulator = { maxconcurrentbattles: 1000, maxbattlesperip: 1000, maxbattlesperip_public: 1000 };" >> myconfig.js && \
+    echo "exports.bannedIpLists = [];" >> myconfig.js && \
+    echo "exports.dnsbl = {};" >> myconfig.js && \
+    echo "exports.securitylog = { disabled: true };" >> myconfig.js && \
+    echo "exports.throttle = false;" >> myconfig.js
+
+RUN echo "exports.noipchecks = true;" >> myconfig.js && \
+    echo "exports.allowAlts = true;" >> myconfig.js && \
+    echo "exports.lan = true;" >> myconfig.js
+
+RUN cp myconfig.js config/config.js
+RUN cp myconfig.js config.js
+
+EXPOSE 8000
+
+CMD ["node", "pokemon-showdown", "start", "--no-security"]

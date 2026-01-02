@@ -14,4 +14,4 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 USER airflow
 
-RUN pip install pyspark==3.5.0 pandas psycopg2-binary
+RUN pip install pyspark==3.5.0 pandas psycopg2-binary poke-env asyncio

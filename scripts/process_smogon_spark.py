@@ -1,10 +1,10 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
+from pyspark.sql import SparkSession #type:ignore
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType #type:ignore
 import os
 import sys
 import json
-import pandas as pd
-from sqlalchemy import create_engine, text
+import pandas as pd #type:ignore
+from sqlalchemy import create_engine, text #type:ignore
 import glob
 
 def process_data():
@@ -21,7 +21,7 @@ def process_data():
             conn.commit()
         print("Tables cleaned successfully.")
     except Exception as e:
-        print(f"Warning: Could not truncate tables (might be first run): {e}")
+        print(f"Warning: Could not truncate tables: {e}")
 
     spark = SparkSession.builder \
         .appName("SmogonProcessing") \
@@ -32,8 +32,6 @@ def process_data():
     possible_files = glob.glob(f"{raw_dir}/*.json")
     smogon_file = None
     metadata_file = None
-
-    print(f"Files found in {raw_dir}: {possible_files}")
 
     for f in possible_files:
         if "metadata" in f:
@@ -56,15 +54,11 @@ def process_data():
     for name, data in meta_dict.items():
         valid_pokemon.add(name)
         dim_rows.append({
+            "pokemon_id": data['id'],
             "pokemon_name": name,
             "type_1": data['types'][0] if len(data['types']) > 0 else None,
             "type_2": data['types'][1] if len(data['types']) > 1 else None,
-            "hp": data['stats'].get('hp', 0),
-            "attack": data['stats'].get('attack', 0),
-            "defense": data['stats'].get('defense', 0),
-            "sp_attack": data['stats'].get('special-attack', 0),
-            "sp_defense": data['stats'].get('special-defense', 0),
-            "speed": data['stats'].get('speed', 0),
+            "bst": sum(data['stats'].values()),
             "is_fully_evolved": True
         })
     
@@ -74,7 +68,7 @@ def process_data():
         print(f"Dimension Table Loaded: {len(dim_rows)} rows.")
     except Exception as e:
         print(f"Error writing Dim: {e}")
-        sys.exit(1)
+        pass
 
     with open(smogon_file, 'r') as f:
         chaos_data = json.load(f)
@@ -88,35 +82,43 @@ def process_data():
             moves = stats.get('Moves', {})
             spreads = stats.get('Spreads', {})
             
+            natures_count = {}
+            for k, v in spreads.items():
+                nature_name = k.split(':')[0]
+                natures_count[nature_name] = natures_count.get(nature_name, 0) + v
+            
             top_items = dict(sorted(items.items(), key=lambda item: item[1], reverse=True)[:5])
             top_moves = dict(sorted(moves.items(), key=lambda item: item[1], reverse=True)[:10])
             top_spreads = dict(sorted(spreads.items(), key=lambda item: item[1], reverse=True)[:5])
+            top_natures = dict(sorted(natures_count.items(), key=lambda item: item[1], reverse=True)[:5])
 
-            fact_rows.append((
-                name,
-                float(stats.get('usage', 0)),
-                int(stats.get('Raw count', 0)),
-                "2025-11-01", 
-                json.dumps(top_items),
-                json.dumps(top_moves),
-                json.dumps(top_spreads)
-            ))
+            p_id = next((d['pokemon_id'] for d in dim_rows if d['pokemon_name'] == name), None)
+
+            if p_id:
+                fact_rows.append((
+                    p_id,
+                    float(stats.get('usage', 0)),
+                    int(stats.get('Raw count', 0)),
+                    "2025-11-01", 
+                    json.dumps(top_items),
+                    json.dumps(top_moves),
+                    json.dumps(top_spreads),
+                    json.dumps(top_natures)
+                ))
             
     schema = StructType([
-        StructField("pokemon_name", StringType(), True),
+        StructField("pokemon_id", IntegerType(), True),
         StructField("usage_percent", DoubleType(), True),
         StructField("raw_count", IntegerType(), True),
         StructField("month_date", StringType(), True),
         StructField("top_items", StringType(), True),
         StructField("top_moves", StringType(), True),
-        StructField("top_spreads", StringType(), True)
+        StructField("top_spreads", StringType(), True),
+        StructField("top_natures", StringType(), True)
     ])
     
-    if not fact_rows:
-        print("WARNING: No rows matched! Check that Smogon names match API names.")
-    else:
+    if fact_rows:
         sdf_fact = spark.createDataFrame(fact_rows, schema)
-        
         sdf_fact.write \
             .format("jdbc") \
             .option("url", db_url_spark) \
@@ -126,7 +128,6 @@ def process_data():
             .option("driver", "org.postgresql.Driver") \
             .mode("append") \
             .save()
-
         print(f"Fact Table Loaded: {len(fact_rows)} rows.")
     
     spark.stop()

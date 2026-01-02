@@ -80,5 +80,38 @@ services:
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
 
+  showdown:
+    build:
+      context: .
+      dockerfile: Dockerfile.showdown
+    ports:
+      - "8000:8000"
+    environment:
+      - PS_PORT=8000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1G
+
+  dashboard:
+    image: python:3.9-slim
+    container_name: pokemon-dashboard
+    restart: always
+    ports:
+      - "8501:8501"
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=airflow
+      - DB_USER=airflow
+      - DB_PASSWORD=airflow
+    volumes:
+      - ./dashboard:/app
+    working_dir: /app
+    command: >
+      bash -c "pip install streamlit psycopg2-binary pandas && streamlit run app.py"
+    depends_on:
+      - postgres
+
 volumes:
   postgres-db-volume:
