@@ -1,0 +1,6 @@
+poke-env
+psycopg2-binary
+pandas
+streamlit
+asyncio
+sqlalchemy

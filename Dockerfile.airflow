@@ -1,0 +1,23 @@
+FROM apache/airflow:2.7.1-python3.9
+
+USER root
+
+RUN apt-get update && apt-get install -y \
+    git \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /opt/airflow/bot_env
+RUN chown -R airflow: /opt/airflow/bot_env
+
+USER airflow
+
+RUN python -m venv /opt/airflow/bot_env
+
+COPY requirements.txt /tmp/requirements.txt
+
+ENV PIP_USER=false
+
+RUN /opt/airflow/bot_env/bin/pip install --upgrade pip && \
+    /opt/airflow/bot_env/bin/pip install -r /tmp/requirements.txt

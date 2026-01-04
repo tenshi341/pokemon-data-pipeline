@@ -34,9 +34,4 @@ with DAG(
         bash_command='python /opt/airflow/scripts/process_smogon_spark.py'
     )
 
-    run_simulation = BashOperator(
-        task_id='run_battle_simulator',
-        bash_command='python /opt/airflow/scripts/battle_simulator.py'
-    )
-
-    ingest_stats >> fetch_metadata >> process_spark >> run_simulation
+    ingest_stats >> fetch_metadata >> process_spark
