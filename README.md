@@ -31,6 +31,7 @@ To run this project, the host machine must have Docker and Docker Compose instal
 ## Installation and Usage
 
 1. Clone the repository to your local machine:
+2. 
    bash
    
    git clone [https://github.com/tenshi341/pokemon-data-pipeline](https://github.com/tenshi341/pokemon-data-pipeline.git)
@@ -51,6 +52,7 @@ Bash
 docker exec -it pokemon-data-pipeline-airflow-scheduler-1 /opt/airflow/bot_env/bin/python /opt/airflow/scripts/bot.py
 
 Database Schema
+
 The PostgreSQL database is organized into three primary tables:
 
 dim_pokemon: Stores static attributes including the Pokémon ID, name, types, and base statistics. This table is enriched using data from the PokéAPI.
@@ -59,5 +61,9 @@ fact_usage: Contains the statistical data derived from Smogon. It links to the d
 
 fact_battles: Records the outcomes of the simulations. It references the unique team hashes involved in the match, the winner, the loser, and the total turn count.
 
+Simulations create a tier list that can be seen in real time while the servers are running. http://localhost:8501/
+Build can be copied and used in real battles from this data. Teams are judged on winrate, if a team is generated 2 separate times the data is merged to achieve an all time winrate agains any team. Theoretically, with enough time running this script, we would get one of the best teams in terms of raw winrate capabilities (without taking into consideration things like predicting moves of your opponent, like it would happen in real life scenarios)
+
 Performance Considerations
+
 This project is optimized for execution on standard personal hardware. The Docker containers are configured with strict resource limits to prevent memory exhaustion. Database writes from the simulator are batched to minimize I/O overhead. The simulation logic eschews storing full textual battle logs in favor of lightweight integer-based metadata to minimize storage requirements.
