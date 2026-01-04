@@ -32,7 +32,7 @@ To run this project, the host machine must have Docker and Docker Compose instal
 
 1. Clone the repository to your local machine:
    bash
-   git clone [https://github.com/tenshi341/pokemon-data-pipeline](https://github.com/your-username/pokemon-data-pipeline.git)
+   git clone [https://github.com/tenshi341/pokemon-data-pipeline](https://github.com/tenshi341/pokemon-data-pipeline.git)
    cd pokemon-data-pipeline
    
 Build and start the containerized services using Docker Compose. This command initializes Airflow, Postgres, and the Spark master node:
