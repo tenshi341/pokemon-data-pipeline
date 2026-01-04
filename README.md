@@ -32,12 +32,14 @@ To run this project, the host machine must have Docker and Docker Compose instal
 
 1. Clone the repository to your local machine:
    bash
+   
    git clone [https://github.com/tenshi341/pokemon-data-pipeline](https://github.com/tenshi341/pokemon-data-pipeline.git)
    cd pokemon-data-pipeline
    
 Build and start the containerized services using Docker Compose. This command initializes Airflow, Postgres, and the Spark master node:
 
 Bash
+
 docker-compose up --build -d
 
 Access the Airflow web interface at http://localhost:8080. Default set user is admin with password: admin. Enable the primary DAG named smogon_elt_pipeline to commence the data ingestion and transformation process.
@@ -45,6 +47,7 @@ Access the Airflow web interface at http://localhost:8080. Default set user is a
 Once the pipeline has completed a successful run, the battle simulator can be triggered via the provided Python entry point script:
 
 Bash
+
 docker exec -it pokemon-data-pipeline-airflow-scheduler-1 /opt/airflow/bot_env/bin/python /opt/airflow/scripts/bot.py
 
 Database Schema
